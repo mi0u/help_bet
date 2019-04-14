@@ -189,17 +189,19 @@ def printDayVigs(day=None, v=20, booksaccepted =books, doubles = False):
 # Prints matches with X odd from championsbet
 # day = day to search
 # v = vig limit
+# booksaccepted = array with the books from which to retrieve the odds
 # doubles = if True then results with odds from the same bookmaker are also returned
-def printChampionsX(day=None, v=20, doubles = False):
+def printChampionsX(day=None, v=20, booksaccepted=books, doubles=False):
 	if not db: 
 		if not connect(): return
 	for g in getDayVigsDict(day):
 		if g['vig'] < v and g['oX']['bookmaker'] == 'championsbet':
-			if not ((not doubles) and 
-			(g['o1']['bookmaker'] == g['oX']['bookmaker'] or 
-			g['o2']['bookmaker'] == g['oX']['bookmaker'] or 
-			g['o1']['bookmaker'] == g['o2']['bookmaker'])):
-				_print(g)
+			if _condition(v, g['vig'], g['o1']['bookmaker'], g['oX']['bookmaker'], g['o2']['bookmaker'], booksaccepted):
+				if not ((not doubles) and 
+				(g['o1']['bookmaker'] == g['oX']['bookmaker'] or 
+				g['o2']['bookmaker'] == g['oX']['bookmaker'] or 
+				g['o1']['bookmaker'] == g['o2']['bookmaker'])):
+					_print(g)
 
 # Prints combined odds for one matche
 # match = match to search (fuzzy)

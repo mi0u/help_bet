@@ -13,11 +13,13 @@ db = None
 books = ['stoiximan', 'championsbet', 'bet365', 'betrebels', 'pamestoixima']
 
 #Connect to db
-def connect(host):
+def connect(host = None):
 	global uri
 	global client
 	global db
 	if db: return
+	if host == None:
+		host = getpass.getpass('Host:')
 	user = getpass.getpass('User:')
 	passw = getpass.getpass('Pass:')
 	uri = "mongodb://" + user + ":" + passw + "@" + host + ":17017/?authSource=bet_db&authMechanism=SCRAM-SHA-1"
@@ -57,6 +59,10 @@ def _print(g, s=DEFAULT):
 	#t.border = True
 	print(t)
 	#print()
+
+def printyield(y):
+	for v in y:
+		print(v);
 
 # Vig calculation
 def ganiota1x2(a,b,c):
@@ -118,6 +124,28 @@ def getDayMatches(day):
 	for d in cursor:
 		yield d['matches']
 
+# Yield last retrieve of a match
+def getMatchLast(matchname):
+	m = getMatch(matchname)
+	match = m[0]
+	league = m[2]
+	day = m[1]		
+	td = []
+	counter = 0
+	for book in books:
+		pipeline = [ { '$match': { 'date': day,  } },
+					{ '$group': { '_id': { 'DATE': '$date', 'TIME': '$matches.'+match+'.time', 'BOOK': book, 'MATCH': '$matches.'+match+'.bookmakers' } } },
+					{ '$project': {'_id':0, 'date': '$_id.DATE', 'time': '$_id.TIME', 'book': '$_id.BOOK', 'odds': { '$arrayElemAt': [ '$_id.MATCH.'+book, -1 ] } } }
+			   		]
+		r = db[league].aggregate(pipeline)
+		for e in r:
+			if (e['odds']):
+				td.append(e['odds'])
+				td[counter]['bookmaker'] = e['book']
+				td[counter]['time'] = e['time']
+				counter = counter + 1
+	yield td
+
 # Yield last retrieve of all matches from all collections for specific day
 def getDayMatchesLast(day):
 	for l in getDayMatches(day):
@@ -141,20 +169,20 @@ def getDayMatchesLast(day):
 						counter = counter + 1
 		yield td
 
+# Yield dictionary with last retrieved match combined odds
+def getMatchVigsDict(matchname):
+	match = getMatch(matchname)[0]
+	m = getMatchLast(match)
+	for g in m:
+		for one in g:
+			for x in g:
+				for two in g:
+					vig = ganiota1x2(float(one['o1']), float(x['oX']), float(two['o2']))
+					yield {'match': match, 'vig': vig, 'time': x['time'],
+							'o1':{'bookmaker': one['bookmaker'], 'odd': one['o1']},
+							'oX':{'bookmaker': x['bookmaker'], 'odd': x['oX']},
+							'o2':{'bookmaker': two['bookmaker'], 'odd': two['o2']}}
 
-# Yield last retrieve of all matches from all collections for specific day
-def _getDayMatchesLast(day):
-	for l in getDayMatchesFull(day):
-		td = {}
-		for matchname in l['matches']:
-			td[matchname] = []
-			i=0
-			for o in list(l['matches'][matchname]['bookmakers'].keys()):
-				td[matchname].append(l['matches'][matchname]['bookmakers'][o][-1])
-				td[matchname][i]['bookmaker'] = o
-				td[matchname][i]['time'] = l['matches'][matchname]['time']
-				i=i+1
-		yield td
 
 # Yield dictionary with last retrieved matches combined odds
 # from all collections for specific day with vig
@@ -202,6 +230,49 @@ def printChampionsX(day=None, v=20, booksaccepted=books, doubles=False):
 				g['o2']['bookmaker'] == g['oX']['bookmaker'] or 
 				g['o1']['bookmaker'] == g['o2']['bookmaker'])):
 					_print(g)
+
+# Prints matches odds for a day with conditions
+# day = day to search
+# v = vig limit
+# booksaccepted1 = array with the books from which to retrieve the odds for 1
+# booksacceptedX = array with the books from which to retrieve the odds for X
+# booksaccepted2 = array with the books from which to retrieve the odds for 2
+# doubles = if True then results with odds from the same bookmaker are also returned
+def printDayOddsWithConditions(day, v=20, booksaccepted1 =books, booksacceptedX =books, booksaccepted2 =books, doubles = False):
+	if not db: 
+		if not connect(): return
+	for g in getDayVigsDict(day):
+		if ((g['vig'] < v) and 
+			(g['o1']['bookmaker'] in booksaccepted1) and 
+			(g['oX']['bookmaker'] in booksacceptedX) and 
+			(g['o2']['bookmaker'] in booksaccepted2)):
+			if not ((not doubles) and 
+			(g['o1']['bookmaker'] == g['oX']['bookmaker'] or 
+			g['o2']['bookmaker'] == g['oX']['bookmaker'] or 
+			g['o1']['bookmaker'] == g['o2']['bookmaker'])):
+				_print(g)
+
+# Prints match odds with conditions
+# match = match to search
+# v = vig limit
+# booksaccepted1 = array with the books from which to retrieve the odds for 1
+# booksacceptedX = array with the books from which to retrieve the odds for X
+# booksaccepted2 = array with the books from which to retrieve the odds for 2
+# doubles = if True then results with odds from the same bookmaker are also returned
+def printMatchOddsWithConditions(match, v=20, booksaccepted1 =books, booksacceptedX =books, booksaccepted2 =books, doubles = False):
+	if not db: 
+		if not connect(): return
+	for g in getMatchVigsDict(match):
+		if ((g['vig'] < v) and 
+			(g['o1']['bookmaker'] in booksaccepted1) and 
+			(g['oX']['bookmaker'] in booksacceptedX) and 
+			(g['o2']['bookmaker'] in booksaccepted2)):
+			if not ((not doubles) and 
+			(g['o1']['bookmaker'] == g['oX']['bookmaker'] or 
+			g['o2']['bookmaker'] == g['oX']['bookmaker'] or 
+			g['o1']['bookmaker'] == g['o2']['bookmaker'])):
+				_print(g)
+
 
 # Prints combined odds for one matche
 # match = match to search (fuzzy)

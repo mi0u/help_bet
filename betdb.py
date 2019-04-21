@@ -6,6 +6,7 @@ from prettytable import DEFAULT, PLAIN_COLUMNS, MSWORD_FRIENDLY
 from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import getpass
+import datetime
 
 uri = None
 client  = None
@@ -59,6 +60,14 @@ def _print(g, s=DEFAULT):
 	#t.border = True
 	print(t)
 	#print()
+
+def time_ok(t1, limit = 0):
+    lim = limit #minutes
+    t2 = datetime.datetime.now().strftime('%H:%M')
+    dt1 = datetime.datetime.strptime(t1, '%H:%M')
+    dt2 = datetime.datetime.strptime(t2, '%H:%M')
+    diff = (dt1-dt2).total_seconds() / 60
+    return (diff + lim) > 0
 
 def printyield(y):
 	for v in y:
@@ -212,7 +221,8 @@ def printDayVigs(day=None, v=20, booksaccepted =books, doubles = False):
 			(g['o1']['bookmaker'] == g['oX']['bookmaker'] or 
 			g['o2']['bookmaker'] == g['oX']['bookmaker'] or 
 			g['o1']['bookmaker'] == g['o2']['bookmaker'])):
-				_print(g)
+				if time_ok(g['time']):
+					_print(g)
 
 # Prints matches with X odd from championsbet
 # day = day to search
@@ -229,7 +239,8 @@ def printChampionsX(day=None, v=20, booksaccepted=books, doubles=False):
 				(g['o1']['bookmaker'] == g['oX']['bookmaker'] or 
 				g['o2']['bookmaker'] == g['oX']['bookmaker'] or 
 				g['o1']['bookmaker'] == g['o2']['bookmaker'])):
-					_print(g)
+					if time_ok(g['time']):
+						_print(g)
 
 # Prints matches odds for a day with conditions
 # day = day to search
@@ -250,7 +261,8 @@ def printDayOddsWithConditions(day, v=20, booksaccepted1 =books, booksacceptedX 
 			(g['o1']['bookmaker'] == g['oX']['bookmaker'] or 
 			g['o2']['bookmaker'] == g['oX']['bookmaker'] or 
 			g['o1']['bookmaker'] == g['o2']['bookmaker'])):
-				_print(g)
+				if time_ok(g['time']):
+					_print(g)
 
 # Prints match odds with conditions
 # match = match to search

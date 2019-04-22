@@ -7,6 +7,7 @@ from fuzzywuzzy import fuzz
 from fuzzywuzzy import process
 import getpass
 import datetime
+import pytz
 
 uri = None
 client  = None
@@ -63,7 +64,7 @@ def _print(g, s=DEFAULT):
 
 def time_ok(t1, limit = 0):
     lim = limit #minutes
-    t2 = datetime.datetime.now().strftime('%H:%M')
+    t2 = datetime.datetime.now(pytz.timezone('Europe/Athens')).strftime('%H:%M')
     dt1 = datetime.datetime.strptime(t1, '%H:%M')
     dt2 = datetime.datetime.strptime(t2, '%H:%M')
     diff = (dt1-dt2).total_seconds() / 60

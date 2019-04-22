@@ -11,7 +11,7 @@ import datetime
 uri = None
 client  = None
 db = None
-books = ['stoiximan', 'championsbet', 'bet365', 'betrebels', 'pamestoixima']
+books = ['stoiximan', 'championsbet', 'bet365', 'betrebels', 'pamestoixima', 'novibet']
 
 #Connect to db
 def connect(host = None):

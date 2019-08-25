@@ -24,7 +24,7 @@ def connect(host = None):
 		host = getpass.getpass('Host:')
 	user = getpass.getpass('User:')
 	passw = getpass.getpass('Pass:')
-	uri = "mongodb://" + user + ":" + passw + "@" + host + ":17017/?authSource=bet_db&authMechanism=SCRAM-SHA-1"
+	uri = "mongodb://" + user + ":" + passw + "@" + host + ":27017/?authSource=bet_db&authMechanism=SCRAM-SHA-1"
 	try:
 		client  = MongoClient(uri, serverSelectionTimeoutMS=10000)
 		client.server_info()
